@@ -1,5 +1,26 @@
 import pandas as pd
 
+# Sub Topic status of Pending Topics
+def studentPendingTopics(connection):
+	qry = ('select topic_name, topic_progress, subtopic_name, subtopic_progress'
+		' from eblitydb.eblity_plan_table'
+		' where student_id_id=3 and subject=\'mathematics\''
+		' and topic_progress<100 and topic_progress>0'
+		' order by topic_progress'
+		)
+	df = pd.read_sql(qry, connection)
+	return df
+
+# Get topic and sub-topic progress for a student
+def studentTopicProgress(connection):
+	qry = ('select distinct(topic_name), topic_progress'
+		' from eblitydb.eblity_plan_table'
+		' where student_id_id=3 and subject=\'mathematics\''
+		' order by topic_progress'
+		)
+	df = pd.read_sql(qry, connection)
+	return df
+
 # Get a list of sub topics for each topic of a specific grade
 def topicWithSubTopics(connection):
 	# Build query

@@ -21,6 +21,10 @@ def writeResults(connection):
 		with tag('body'):
 				with tag('div'):
 					text(viz.scatterTopicSubTopics(connection))
+				with tag('div'):
+					text(viz.barTopicProgress(connection))
+				with tag('div'):
+					text(viz.stackedBarPendingTopics(connection))
 	
 	result = doc.getvalue()
 	f = open("images/results.html", "w")
