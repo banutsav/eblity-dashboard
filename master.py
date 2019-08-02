@@ -8,8 +8,17 @@ import viz
 # Credentials for DB connection
 import cred
 
+# Create the Visualizations
+def createVisuals(connection):
+	figures = []
+	#figures.append(viz.scatterTopicSubTopics(connection))
+	figures.append(viz.scatterTopicProgress(connection))
+	figures.append(viz.barTopicProgress(connection))
+	figures.append(viz.stackedBarPendingTopics(connection))
+	return figures
+
 # Save plot to file
-def writeResults(connection):
+def writeResults(figures):
 	doc, tag, text = Doc().tagtext()
 	# Generate HTML
 	with tag('html'):
@@ -17,15 +26,12 @@ def writeResults(connection):
 			with tag('script', src="https://cdn.plot.ly/plotly-latest.min.js"):
 				pass
 			with tag('title'):
-				text('Eblity')
+				text('Student Dashboard | Eblity')
 		with tag('body'):
+			for figure in figures:	
 				with tag('div'):
-					text(viz.scatterTopicSubTopics(connection))
-				with tag('div'):
-					text(viz.barTopicProgress(connection))
-				with tag('div'):
-					text(viz.stackedBarPendingTopics(connection))
-	
+					text(figure)
+				
 	result = doc.getvalue()
 	f = open("images/results.html", "w")
 	f.write(html.unescape(result))
@@ -39,8 +45,9 @@ try:
 	if connection.is_connected():
 		db_Info = connection.get_server_info()
 		print('Connected to MySQL database:',db_Info)
-		writeResults(connection)
-
+		figures = createVisuals(connection)
+		writeResults(figures)
+		
 	end = time.time()
 	print('Execution Time: ' + str(round(end-start,2)) + ' secs')   
 

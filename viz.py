@@ -38,12 +38,12 @@ def stackedBarPendingTopics(connection):
 	# Create stacked bar
 	fig = go.Figure(data=[
     	go.Bar(name='Completed', x=topics, y=compcount, marker_color='lightgreen', hovertext=comphover, hoverinfo='text'),
-    	go.Bar(name='Pending', x=topics, y=pendcount, marker_color='lightblue', hovertext=pendhover, hoverinfo='text'),
+    	go.Bar(name='In-Progress', x=topics, y=pendcount, marker_color='lightblue', hovertext=pendhover, hoverinfo='text'),
     	go.Bar(name='Not Started', x=topics, y=nscount, marker_color='lightsalmon', hovertext=nshover, hoverinfo='text')
 	])
 
 	# Change the bar mode
-	fig.update_layout(title='Pending Topics', barmode='stack')
+	fig.update_layout(title='In-Progress Topics with Sub-Topics', barmode='stack')
 	plot = opy.plot(fig, auto_open=False, output_type='div', include_plotlyjs=False)
 	return plot
 
@@ -52,7 +52,7 @@ def barTopicProgress(connection):
 	df = dm.studentTopicProgress(connection)
 	fig = make_subplots(rows=1, cols=2, specs=[[{"type": "xy"}, {"type": "domain"}]])
 	# Break topics into categories
-	topicstatus = ['Not Started', 'Pending', 'Completed']
+	topicstatus = ['Not Started', 'In-Progress', 'Completed']
 	ns = df.loc[df['topic_progress']==0]['topic_name'].tolist()
 	pend = df.loc[(df['topic_progress']>0)&(df['topic_progress']<100)]['topic_name'].tolist()
 	comp = df.loc[df['topic_progress']==100]['topic_name'].tolist()
@@ -70,8 +70,34 @@ def barTopicProgress(connection):
 		marker_colors=['lightsalmon', 'lightblue', 'lightgreen'],hole=.3), row=1, col=2)
 	
 	# Set title and hover
-	fig.update(layout_title_text='Student Progress', layout_showlegend=False)
+	fig.update(layout_title_text='Topics', layout_showlegend=False)
 	fig.update_traces(hovertext=hover_text, hoverinfo='text')
+	plot = opy.plot(fig, auto_open=False, output_type='div', include_plotlyjs=False)
+	return plot
+
+# Scatter plot with topic progress for a student
+def scatterTopicProgress(connection):
+	df = dm.studentTopicProgressMonth(connection)
+	# Create scatter marker colors and hovertext
+	colors = []; hover_text = []
+	for index, row in df.iterrows():
+		info = row['topic_name']
+		if row['topic_progress']==100:
+			colors.append('lightgreen'); info += '<br>Completed' 
+		elif row['topic_progress']==0:
+			colors.append('lightsalmon'); info += '<br>Not Started<br>Requires ' + str(row['hours']) + ' hours'
+		else:
+			colors.append('lightblue'); info += '<br>' + str(row['topic_progress']) + '% completed'
+		hover_text.append(info)
+
+	# Plotly Scatter
+	fig = go.Figure()
+	fig.add_trace(go.Scatter(x=df['sequence'], y=df['month'], 
+		hovertext=hover_text, hoverinfo='text',
+		mode='lines+markers', name='Mathematics',
+		marker=dict(size=df['hours']*10, color=colors),
+		))
+	fig.update_layout(title='Student Progress Calendar')
 	plot = opy.plot(fig, auto_open=False, output_type='div', include_plotlyjs=False)
 	return plot
 
@@ -93,7 +119,7 @@ def scatterTopicSubTopics(connection):
 
 	# Plotly Scatter
 	fig = go.Figure()
-	fig.add_trace(go.Scatter(x=df['topic_id'], y=df['month'], 
+	fig.add_trace(go.Scatter(x=df['sequence'], y=df['month'], 
 		hovertext=hover_text, hoverinfo='text',
 		mode='lines+markers', name='Mathematics',
 		marker=dict(size=df['hours']*10, color=df['no_sub_topics']),
