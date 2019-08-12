@@ -7,14 +7,15 @@ import html
 import viz
 # Credentials for DB connection
 import cred
+import dbmodules as dm
 
 # Create the Visualizations
 def createVisuals(connection):
 	figures = []
-	#figures.append(viz.scatterTopicSubTopics(connection))
-	figures.append(viz.scatterTopicProgress(connection))
-	figures.append(viz.barTopicProgress(connection))
-	figures.append(viz.stackedBarPendingTopics(connection))
+	figures.append(viz.scatterTopicSubTopics(connection, 8, 'mathematics'))
+	figures.append(viz.scatterTopicProgress(connection, 10, 'mathematics'))
+	figures.append(viz.barTopicProgress(connection, 10, 'mathematics'))
+	figures.append(viz.stackedBarPendingTopics(connection, 10, 'mathematics'))
 	return figures
 
 # Save plot to file

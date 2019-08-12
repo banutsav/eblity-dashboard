@@ -1,9 +1,9 @@
 import pandas as pd
-import dbmodules as dm
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.offline as opy
 from plotly.subplots import make_subplots
+import dbmodules as dm
 
 # Create a short text for the hover info
 def shortenText(words):
@@ -19,8 +19,8 @@ def shortenText(words):
 	return text
 
 # Stacked bar distribution of topics pending completion
-def stackedBarPendingTopics(connection):
-	df = dm.studentPendingTopics(connection)
+def stackedBarPendingTopics(connection, studentid, subject):
+	df = dm.studentPendingTopics(connection, studentid, subject)
 	topics = df['topic_name'].unique()
 	# Counts of sub-topics under each category
 	nscount = []; pendcount = []; compcount = []
@@ -48,8 +48,8 @@ def stackedBarPendingTopics(connection):
 	return plot
 
 # Bar and Donut distribution of topics completed and not completed
-def barTopicProgress(connection):
-	df = dm.studentTopicProgress(connection)
+def barTopicProgress(connection, studentid, subject):
+	df = dm.studentTopicProgress(connection, studentid, subject)
 	fig = make_subplots(rows=1, cols=2, specs=[[{"type": "xy"}, {"type": "domain"}]])
 	# Break topics into categories
 	topicstatus = ['Not Started', 'In-Progress', 'Completed']
@@ -76,8 +76,8 @@ def barTopicProgress(connection):
 	return plot
 
 # Scatter plot with topic progress for a student
-def scatterTopicProgress(connection):
-	df = dm.studentTopicProgressMonth(connection)
+def scatterTopicProgress(connection, studentid, subject):
+	df = dm.studentTopicProgressMonth(connection, studentid, subject)
 	# Create scatter marker colors and hovertext
 	colors = []; hover_text = []
 	for index, row in df.iterrows():
@@ -101,9 +101,9 @@ def scatterTopicProgress(connection):
 	plot = opy.plot(fig, auto_open=False, output_type='div', include_plotlyjs=False)
 	return plot
 
-# Distribution of topic and sub topics across months
-def scatterTopicSubTopics(connection):
-	df = dm.topicWithSubTopics(connection)
+# Distribution of topic and sub topics across months for a subject
+def scatterTopicSubTopics(connection, grade, subject):
+	df = dm.topicWithSubTopics(connection, grade, subject)
 	
 	# Create Hover Text - Topic Name + No. of Sub-Topics
 	hover_text = []
@@ -124,6 +124,6 @@ def scatterTopicSubTopics(connection):
 		mode='lines+markers', name='Mathematics',
 		marker=dict(size=df['hours']*10, color=df['no_sub_topics']),
 		))
-	fig.update_layout(title='Mathematics Grade 8')
+	fig.update_layout(title=subject+' grade ' + str(grade))
 	plot = opy.plot(fig, auto_open=False, output_type='div', include_plotlyjs=False)
 	return plot
