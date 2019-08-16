@@ -1,5 +1,37 @@
 import pandas as pd
 
+def getUser(connection, studentid):
+	qry = ('select username, first_name, last_name'
+		' from eblitydb.auth_user'
+		' where id=' + str(studentid)
+		)
+	cursor = connection.cursor()
+	cursor.execute(qry)
+	records = cursor.fetchone()
+	return records
+
+def completedTopics(connection, studentid, subject):
+	qry = ('select distinct(topic_name)'
+		' from eblitydb.eblity_plan_table'
+		' where student_id_id=' + str(studentid) +
+		' and topic_progress=100' 
+		' and subject=\'' + subject + '\''
+		)
+	cursor = connection.cursor()
+	cursor.execute(qry)
+	records = cursor.fetchall()
+	return records
+
+# Details of time spent, attempts and errors for sub topics of a completed topic
+def completedTopicDetails(connection, username, topic):
+	qry = ('select sub_sub_topic, BLTO, difficulty_level, timespent, attempts, errors'
+		' from eblitydb.perf_trail'
+		' where username=\'' + username + '\' and topic=\'' + topic + '\''
+		)
+	df = pd.read_sql(qry, connection)
+	df['score'] = [row['attempts'] + row['errors'] for index, row in df.iterrows()]
+	return df
+
 # Student topic progress by month
 # Inputs - studentid and subject
 # Output - Dataframe with topics over months

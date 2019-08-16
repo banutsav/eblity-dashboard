@@ -1,9 +1,29 @@
+import random
+import numpy as np
+import colorsys
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.offline as opy
 from plotly.subplots import make_subplots
+import colorlover as cl
 import dbmodules as dm
+
+# Construct a list of unique colors to be used for plotting
+def getUniqueColors(num_colors):
+    if num_colors<=8:
+    	colorset = cl.scales['8']['qual']['Set2']
+    	#random.shuffle(colorset)
+    	unqcolors = colorset[:num_colors]
+    	return list(unqcolors)
+    # More then 8 colors needed
+    colors=[]
+    for i in np.arange(0., 360., 360. / num_colors):
+        hue = i/360.
+        lightness = (50 + np.random.rand() * 10)/100.
+        saturation = (90 + np.random.rand() * 10)/100.
+        colors.append(colorsys.hls_to_rgb(hue, lightness, saturation))
+    return list(colors)
 
 # Create a short text for the hover info
 def shortenText(words):
@@ -17,6 +37,34 @@ def shortenText(words):
 		text = text + '<br>' + words[i]
 	text = text + '<br>' + '...and ' + str(l-5) + ' more'
 	return text
+	
+# Scatter plot of sub-topic details for a completed topic
+def scatterCompletedTopics(connection, username, topic):
+	df = dm.completedTopicDetails(connection, username, topic)
+	subtopics = list(df['sub_sub_topic'].unique())
+	# Create hovertext and colors
+	hovertext = []; colors = []
+	for index, row in df.iterrows():
+		hovertext.append('<b>'+row['sub_sub_topic']+'</b><br>Objective: '+row['BLTO']
+			+'<br>Difficulty Level: '+row['difficulty_level']
+			+'<br>Time Spent: '+str(round(row['timespent']/60,2))+' mins<br>Attempts: '
+			+str(row['attempts'])+'<br>Errors: '+str(row['errors']))
+		if row['score']>5 and row['timespent']>400:
+			colors.append('lightsalmon')
+		else:
+			colors.append('lightgreen') 
+	# Plotly Scatter
+	fig = go.Figure()
+	fig.add_trace(go.Scatter(x=df.index, y=df['timespent'], 
+		hovertext=hovertext, hoverinfo='text', 
+		mode='lines+markers', name=topic,
+		marker=dict(size=df['score']*10, color=colors)
+		))
+	fig.update_layout(title=topic)
+	fig.update_xaxes(showticklabels=False, title=str(df.shape[0])+' sub-topics')
+	fig.update_yaxes(showticklabels=False)
+	plot = opy.plot(fig, auto_open=False, output_type='div', include_plotlyjs=False)
+	return plot
 
 # Stacked bar distribution of topics pending completion
 def stackedBarPendingTopics(connection, studentid, subject):
@@ -61,20 +109,18 @@ def barTopicProgress(connection, studentid, subject):
 	hover_text = [shortenText(ns), shortenText(pend), shortenText(comp)]
 
 	# Bar graph of topic counts in the categories
-	fig.add_trace(go.Bar(x=topicstatus, 
-		y=[len(ns), len(pend), len(comp)],
-		marker_color=['lightsalmon', 'lightblue', 'lightgreen']
-	#	, hovertext=hover_text, hoverinfo='text'
-		), row=1, col=1)
-	fig.add_trace(go.Pie(labels=topicstatus, values=[len(ns), len(pend), len(comp)], 
+	fig.add_trace(go.Bar(x=topicstatus, y=[len(ns), len(pend), len(comp)],
+		hovertext=hover_text, hoverinfo='text',
+		marker_color=['lightsalmon', 'lightblue', 'lightgreen']), row=1, col=1)
+	fig.add_trace(go.Pie(labels=topicstatus, values=[len(ns), len(pend), len(comp)],
+		hovertext=hover_text, hoverinfo='text',
 		marker_colors=['lightsalmon', 'lightblue', 'lightgreen'],hole=.3), row=1, col=2)
 	
-	# Set title and hover
-	fig.update(layout_title_text='Topics', layout_showlegend=False)
-	fig.update_traces(hovertext=hover_text, hoverinfo='text')
-	plot = opy.plot(fig, auto_open=False, output_type='div', include_plotlyjs=False)
+	fig.update_layout(go.Layout(title='Topics',showlegend=False,
+		xaxis=dict(fixedrange=True),yaxis=dict(fixedrange=True)))
+	plot = opy.plot(fig, auto_open=False, output_type='div', include_plotlyjs=False, config={'displayModeBar':False})
 	return plot
-
+	
 # Scatter plot with topic progress for a student
 def scatterTopicProgress(connection, studentid, subject):
 	df = dm.studentTopicProgressMonth(connection, studentid, subject)
